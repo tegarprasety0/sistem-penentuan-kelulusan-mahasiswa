@@ -3,6 +3,10 @@
 
 Project ini adalah aplikasi web sederhana untuk menentukan kelulusan mahasiswa berdasarkan tiga kriteria utama menggunakan operasi logika Aljabar Boolean. Data mahasiswa akan tersimpan secara otomatis di penyimpanan lokal browser (Local Storage), sehingga data tidak hilang saat halaman di-refresh.
 
+## 🌐 Demo
+Kamu bisa mencoba aplikasi ini secara langsung melalui tautan berikut:
+👉 **[https://spklm.vercel.app/](https://spklm.vercel.app/)**
+
 ## 👥 Tim Pengembang
 **Dibuat oleh Kelompok 4:**
 
@@ -43,6 +47,7 @@ Kelulusan ditentukan dengan tiga kondisi. Semua kondisi harus bernilai **benar (
 - **HTML5** (Struktur)
 - **CSS3** (Styling & Responsive Layout)
 - **Vanilla JavaScript** (Logika Boolean & Local Storage)
+- **Vercel** (Deployment / Hosting)
 
 ## 🚀 Cara Menjalankan
 1. Clone repository ini atau download sebagai ZIP.
