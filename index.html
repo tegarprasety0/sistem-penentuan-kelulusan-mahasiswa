@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistem penentuan kelulusan mahasiswa menggunakan Aljabar Boolean.">
+    <title>Sistem Kelulusan Mahasiswa | Aljabar Boolean</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <p class="brand">ALJABAR BOOLEAN</p>
+            <p class="header-label">KELOMPOK 4</p>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Sistem Penentuan<br>Kelulusan Mahasiswa</h1>
+            <p class="hero-description">
+                Sistem sederhana untuk menentukan kelulusan mahasiswa berdasarkan
+                nilai ujian, tugas, dan kehadiran menggunakan operasi logika Boolean.
+            </p>
+        </section>
+
+        <section class="content" aria-label="Formulir dan hasil kelulusan">
+            <section class="form-section">
+                <div class="section-heading">
+                    <h2>Periksa Kelulusan</h2>
+                </div>
+
+                <form id="graduationForm">
+                    <div class="form-group">
+                        <label for="nama">Nama Mahasiswa</label>
+                        <input type="text" id="nama" name="nama" placeholder="Masukkan nama mahasiswa" required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ujian">Nilai Ujian</label>
+                        <input type="number" id="ujian" name="ujian" placeholder="0–100" min="0" max="100" step="any" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tugas">Nilai Tugas</label>
+                        <input type="number" id="tugas" name="tugas" placeholder="0–100" min="0" max="100" step="any" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kehadiran">Persentase Kehadiran</label>
+                        <input type="number" id="kehadiran" name="kehadiran" placeholder="0–100" min="0" max="100" step="any" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">PROSES KELULUSAN</button>
+                </form>
+            </section>
+
+            <section class="result-section" aria-live="polite">
+                <div class="section-heading">
+                    <h2>Hasil Kelulusan</h2>
+                </div>
+                <div id="result" class="result-placeholder">
+                    <p>Belum ada data yang diperiksa.</p>
+                    <span>Isi formulir untuk melihat hasil kelulusan.</span>
+                </div>
+            </section>
+        </section>
+
+        <section class="student-section">
+            <div class="student-header">
+                <div>
+                    <h2>Data Mahasiswa</h2>
+                    <p>Data yang telah diperiksa tersimpan di penyimpanan lokal browser ini.</p>
+                </div>
+                <button type="button" id="clearAllBtn" class="clear-btn">HAPUS SEMUA DATA</button>
+            </div>
+
+            <div class="statistics">
+                <div class="stat-item">
+                    <p>TOTAL MAHASISWA</p>
+                    <h3 id="totalMahasiswa">0</h3>
+                </div>
+                <div class="stat-item">
+                    <p>JUMLAH LULUS</p>
+                    <h3 id="jumlahLulus">0</h3>
+                </div>
+                <div class="stat-item">
+                    <p>JUMLAH TIDAK LULUS</p>
+                    <h3 id="jumlahTidakLulus">0</h3>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NO.</th>
+                            <th>NAMA</th>
+                            <th>UJIAN</th>
+                            <th>TUGAS</th>
+                            <th>KEHADIRAN</th>
+                            <th>STATUS</th>
+                            <th>AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentList">
+                        <tr><td colspan="7" class="empty-row">Belum ada data mahasiswa.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="boolean-section">
+            <h2>Aturan Aljabar Boolean</h2>
+            <p class="boolean-intro">Kelulusan ditentukan dengan tiga kondisi. Semua kondisi harus bernilai benar agar mahasiswa dinyatakan lulus.</p>
+
+            <div class="rules-grid">
+                <article class="rule-card">
+                    <span class="rule-symbol">A</span>
+                    <h3>Nilai Ujian</h3>
+                    <p>Nilai ujian ≥ 60</p>
+                </article>
+                <article class="rule-card">
+                    <span class="rule-symbol">B</span>
+                    <h3>Nilai Tugas</h3>
+                    <p>Nilai tugas ≥ 60</p>
+                </article>
+                <article class="rule-card">
+                    <span class="rule-symbol">C</span>
+                    <h3>Kehadiran</h3>
+                    <p>Kehadiran ≥ 75%</p>
+                </article>
+            </div>
+
+            <div class="logic-formulas">
+                <p><strong>Persamaan kelulusan:</strong> L = A AND B AND C</p>
+                <p><strong>Persamaan tidak lulus:</strong> T = NOT A OR NOT B OR NOT C</p>
+                <p><strong>Operator negasi:</strong> NOT L = !L</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>SISTEM PENENTUAN KELULUSAN MAHASISWA</p>
+        <p>Implementasi Aljabar Boolean menggunakan HTML, CSS, dan JavaScript.</p>
+    </footer>
+</body>
+</html>
