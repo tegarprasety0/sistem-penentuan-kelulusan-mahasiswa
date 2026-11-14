@@ -18,7 +18,7 @@ Kamu bisa mencoba aplikasi ini secara langsung melalui tautan berikut:
 | **Tegar Prasetyo** | 09021282530043 |
 
 ---
-*Project ini dibuat untuk memenuhi tugas mata kuliah Aljabar Boolean.*
+*Project ini dibuat untuk memenuhi project mata kuliah Struktur Diskrit II.*
 
 ## ✨ Fitur
 - **Formulir Penilaian:** Input nama, nilai ujian, nilai tugas, dan persentase kehadiran.
