@@ -1,304 +1,535 @@
-const graduationForm = document.getElementById("graduationForm");
-const result = document.getElementById("result");
-const studentList = document.getElementById("studentList");
+(() => {
+  "use strict";
 
-// DATA MAHASISWA DARI LOCAL STORAGE
-let dataMahasiswa = [];
+  /* ---------------- konfigurasi aturan ---------------- */
 
-try {
-    const dataTersimpan = localStorage.getItem("dataMahasiswa");
-    dataMahasiswa = dataTersimpan ? JSON.parse(dataTersimpan) : [];
+  const STORE_KEY = "aljabar-boolean-kelulusan-v1";
+  const FIELDS = ["ujian", "tugas", "kehadiran"];
 
-    if (!Array.isArray(dataMahasiswa)) {
-        dataMahasiswa = [];
-    }
-} catch (error) {
-    dataMahasiswa = [];
-}
+  const ATOMS = [
+    { id: "A", field: "ujian", threshold: 70, label: "Ujian ≥ 70" },
+    { id: "B", field: "tugas", threshold: 60, label: "Tugas ≥ 60" },
+    { id: "C", field: "kehadiran", threshold: 75, label: "Kehadiran ≥ 75" },
+    { id: "D", field: "ujian", threshold: 85, label: "Ujian ≥ 85" },
+    { id: "E", field: "tugas", threshold: 80, label: "Tugas ≥ 80" },
+    { id: "F", field: "kehadiran", threshold: 70, label: "Kehadiran ≥ 70" }
+  ];
 
-function simpanData() {
+  const PATHS = [
+    { label: "J₁", atoms: ["A", "B", "C"] },
+    { label: "J₂", atoms: ["D", "E", "F"] }
+  ];
+
+  const FIELD_LABEL = { ujian: "ujian", tugas: "tugas", kehadiran: "kehadiran" };
+
+  const byId = (id) => document.getElementById(id);
+
+  const form = byId("form");
+  const nameInput = byId("nama");
+  const verdict = byId("verdict");
+  const verdictValue = byId("verdictValue");
+  const verdictNote = byId("verdictNote");
+  const pathsEl = byId("paths");
+  const pathFinal = byId("pathFinal");
+  const recordsBody = byId("recordsBody");
+  const archiveTable = byId("archiveTable");
+  const archiveEmpty = byId("archiveEmpty");
+  const archiveCount = byId("archiveCount");
+  const archiveStatus = byId("archiveStatus");
+  const scrollHint = byId("scrollHint");
+  const clearAllBtn = byId("clearAll");
+  const atomBody = byId("atomBody");
+
+  let storageOK = true;
+  let flashId = null;
+  let statusTimer = 0;
+
+  /* ---------------- penyimpanan ---------------- */
+
+  function loadRecords() {
     try {
-        localStorage.setItem(
-            "dataMahasiswa",
-            JSON.stringify(dataMahasiswa)
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return [];
+      return data.filter((record) => {
+        return (
+          record &&
+          typeof record.id === "string" &&
+          typeof record.nama === "string" &&
+          FIELDS.every((field) => Number.isFinite(record[field])) &&
+          typeof record.lulus === "boolean" &&
+          Number.isFinite(record.at)
         );
+      });
     } catch (error) {
-        alert("Data gagal disimpan di browser.");
-        console.error("Gagal menyimpan data:", error);
+      storageOK = false;
+      return [];
     }
-}
+  }
 
-// MENCEGAH TEKS NAMA DIBACA SEBAGAI HTML
-function escapeHTML(teks) {
-    return String(teks).replace(/[&<>"']/g, function (karakter) {
-        const karakterHTML = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        };
+  function persist() {
+    if (!storageOK) return;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(records));
+    } catch (error) {
+      storageOK = false;
+      showStorageWarning();
+    }
+  }
 
-        return karakterHTML[karakter];
+  function showStorageWarning() {
+    const foot = document.querySelector(".foot");
+    if (!foot || document.getElementById("storageWarning")) return;
+    const warning = document.createElement("span");
+    warning.id = "storageWarning";
+    warning.textContent = "Penyimpanan peramban tidak tersedia";
+    warning.style.color = "var(--accent)";
+    foot.appendChild(warning);
+  }
+
+  let records = loadRecords();
+
+  /* ---------------- util ---------------- */
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, (char) => {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
     });
-}
+  }
 
-// MENAMPILKAN STATISTIK
-function tampilkanStatistik() {
-    const total = dataMahasiswa.length;
+  function formatTime(timestamp) {
+    try {
+      return new Date(timestamp).toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch (error) {
+      return "";
+    }
+  }
 
-    const jumlahLulus = dataMahasiswa.filter(
-        mahasiswa => mahasiswa.lulus
-    ).length;
+  function createId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
 
-    const jumlahTidakLulus = total - jumlahLulus;
+  function setArchiveStatus(text) {
+    archiveStatus.textContent = text;
+    archiveStatus.classList.add("is-on");
+    window.clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(() => {
+      archiveStatus.classList.remove("is-on");
+      archiveStatus.textContent = "";
+    }, 2600);
+  }
 
-    document.getElementById("totalMahasiswa").textContent = total;
-    document.getElementById("jumlahLulus").textContent = jumlahLulus;
-    document.getElementById("jumlahTidakLulus").textContent = jumlahTidakLulus;
-}
+  /* ---------------- tabel atom ---------------- */
 
-// MENAMPILKAN DATA MAHASISWA
-function tampilkanData() {
-    if (dataMahasiswa.length === 0) {
-        studentList.innerHTML = `
-            <tr>
-                <td colspan="7" class="empty-row">
-                    Belum ada data mahasiswa.
-                </td>
-            </tr>
-        `;
+  const atomRows = new Map();
 
-        tampilkanStatistik();
-        return;
+  ATOMS.forEach((atom) => {
+    const row = document.createElement("tr");
+    row.dataset.atom = atom.id;
+    row.innerHTML =
+      '<td><span class="atom-key">' + atom.id + "</span></td>" +
+      "<td>" + atom.label + "</td>" +
+      '<td class="num" data-value>&ndash;</td>' +
+      '<td class="num"><span class="bit" data-bit>&ndash;</span></td>';
+    atomBody.appendChild(row);
+    atomRows.set(atom.id, row);
+  });
+
+  /* ---------------- baca & evaluasi ---------------- */
+
+  function readInputs() {
+    const values = {};
+    let complete = true;
+
+    FIELDS.forEach((field) => {
+      const input = byId(field);
+      const raw = input.value.trim();
+      const numeric = Number(raw);
+      const valid = raw !== "" && Number.isFinite(numeric) && numeric >= 0 && numeric <= 100;
+      values[field] = valid ? Math.round(numeric) : null;
+      if (!valid) complete = false;
+    });
+
+    return {
+      values: values,
+      complete: complete,
+      name: nameInput.value.trim().replace(/\s+/g, " ")
+    };
+  }
+
+  function evaluate(values) {
+    const bits = {};
+    ATOMS.forEach((atom) => {
+      bits[atom.id] = values[atom.field] >= atom.threshold;
+    });
+
+    const path1 = bits.A && bits.B && bits.C;
+    const path2 = bits.D && bits.E && bits.F;
+
+    return { bits: bits, path1: path1, path2: path2, lulus: path1 || path2 };
+  }
+
+  function failedAtoms(path, bits, values) {
+    return ATOMS.filter((atom) => path.atoms.indexOf(atom.id) !== -1 && !bits[atom.id])
+      .map((atom) => atom.id + " (" + FIELD_LABEL[atom.field] + " " + values[atom.field] + " < " + atom.threshold + ")")
+      .join(", ");
+  }
+
+  function buildNote(name, values, result) {
+    const prefix = name ? name + " — " : "";
+
+    if (result.lulus) {
+      const via = [];
+      if (result.path1) via.push("J₁");
+      if (result.path2) via.push("J₂");
+      return prefix + "L = 1 karena " + via.join(" dan ") + " terpenuhi. Mahasiswa dinyatakan lulus.";
     }
 
-    studentList.innerHTML = dataMahasiswa.map((mahasiswa, index) => {
-        const kelasStatus = mahasiswa.lulus
-            ? "status-pass"
-            : "status-fail";
+    return (
+      prefix +
+      "L = 0 dan ¬L = 1. J₁ gagal pada " +
+      failedAtoms(PATHS[0], result.bits, values) +
+      "; J₂ gagal pada " +
+      failedAtoms(PATHS[1], result.bits, values) +
+      "."
+    );
+  }
 
-        return `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHTML(mahasiswa.nama)}</td>
-                <td>${mahasiswa.ujian}</td>
-                <td>${mahasiswa.tugas}</td>
-                <td>${mahasiswa.kehadiran}%</td>
-                <td class="${kelasStatus}">
-                    ${mahasiswa.status}
-                </td>
-                <td>
-                    <button
-                        type="button"
-                        class="delete-btn"
-                        data-index="${index}"
-                        aria-label="Hapus data ${escapeHTML(mahasiswa.nama)}"
-                    >
-                        HAPUS
-                    </button>
-                </td>
-            </tr>
-        `;
+  /* ---------------- render evaluasi ---------------- */
+
+  function renderIdle() {
+    verdict.dataset.state = "idle";
+    verdictValue.textContent = "—";
+    verdictNote.textContent = "Lengkapi ketiga nilai (0–100) untuk mengevaluasi.";
+
+    ATOMS.forEach((atom) => {
+      const row = atomRows.get(atom.id);
+      row.querySelector("[data-value]").textContent = "–";
+      const bit = row.querySelector("[data-bit]");
+      bit.textContent = "–";
+      bit.className = "bit";
+    });
+
+    pathsEl.innerHTML = '<div class="path-empty">Menunggu nilai lengkap.</div>';
+    pathFinal.innerHTML = "<span>L = J₁ ∨ J₂ = –</span><span>¬L = –</span>";
+  }
+
+  function renderEvaluation() {
+    const input = readInputs();
+
+    if (!input.complete) {
+      renderIdle();
+      return;
+    }
+
+    const result = evaluate(input.values);
+
+    verdict.dataset.state = result.lulus ? "pass" : "fail";
+    verdictValue.textContent = result.lulus ? "Lulus" : "Tidak lulus";
+    verdictNote.textContent = buildNote(input.name, input.values, result);
+
+    ATOMS.forEach((atom) => {
+      const row = atomRows.get(atom.id);
+      row.querySelector("[data-value]").textContent = input.values[atom.field];
+      const bit = row.querySelector("[data-bit]");
+      bit.textContent = result.bits[atom.id] ? "1" : "0";
+      bit.className = "bit " + (result.bits[atom.id] ? "is-1" : "is-0");
+    });
+
+    pathsEl.innerHTML = PATHS.map((path) => {
+      const bits = path.atoms.map((id) => result.bits[id]);
+      const value = bits.every(Boolean);
+      const renderedBits = bits
+        .map((bit) => '<b class="' + (bit ? "is-1" : "is-0") + '">' + (bit ? 1 : 0) + "</b>")
+        .join(' <span class="eq">∧</span> ');
+
+      return (
+        '<div class="path">' +
+        '<span class="path__id">' + path.label + "</span>" +
+        '<span class="path__calc">' + path.atoms.join(" ∧ ") +
+        ' <span class="eq">=</span> ' + renderedBits + "</span>" +
+        '<span class="path__res ' + (value ? "is-1" : "is-0") + '">' + (value ? 1 : 0) + "</span>" +
+        "</div>"
+      );
     }).join("");
 
-    tampilkanStatistik();
-}
+    pathFinal.innerHTML =
+      '<span class="strong">L = J₁ ∨ J₂ = <b class="' + (result.lulus ? "is-1" : "is-0") + '">' + (result.lulus ? 1 : 0) + "</b></span>" +
+      "<span>¬L = <b class=\"" + (result.lulus ? "is-0" : "is-1") + '">' + (result.lulus ? 0 : 1) + "</b></span>";
+  }
 
-// MENAMPILKAN HASIL KELULUSAN
-function tampilkanHasil(mahasiswa) {
-    const {
-        nama,
-        ujian,
-        tugas,
-        kehadiran,
-        A,
-        B,
-        C,
-        lulus
-    } = mahasiswa;
+  /* ---------------- render arsip ---------------- */
 
-    const kelasStatus = lulus ? "pass" : "fail";
-    const teksStatus = lulus ? "LULUS" : "TIDAK LULUS";
+  function resetClearAll() {
+    window.clearTimeout(clearAllBtn.dataset.timer);
+    clearAllBtn.dataset.armed = "";
+    clearAllBtn.textContent = "Hapus semua";
+    clearAllBtn.classList.remove("is-armed");
+  }
 
-    result.className = "result-card " + kelasStatus;
+  function renderArchive() {
+    const total = records.length;
+    const passed = records.filter((record) => record.lulus).length;
 
-    result.innerHTML = `
-        <p class="result-status">${teksStatus}</p>
+    archiveCount.textContent =
+      total + " data · " + passed + " lulus · " + (total - passed) + " tidak lulus";
 
-        <p class="result-name">
-            Nama mahasiswa: ${escapeHTML(nama)}
-        </p>
+    clearAllBtn.disabled = total === 0;
+    resetClearAll();
 
-        <p class="evaluation-title">
-            HASIL EVALUASI KRITERIA
-        </p>
+    archiveTable.hidden = total === 0;
+    archiveEmpty.hidden = total !== 0;
+    scrollHint.hidden = total === 0;
 
-        <ul class="evaluation-list">
-            <li>
-                <span>Nilai ujian (${ujian} ≥ 60)</span>
-                <strong>${A ? "TERPENUHI" : "TIDAK TERPENUHI"}</strong>
-            </li>
+    recordsBody.innerHTML = records
+      .map((record, index) => {
+        const status = record.lulus
+          ? '<span class="tag tag--pass">Lulus</span>'
+          : '<span class="tag tag--fail">Tidak lulus</span>';
+        const bitClass = record.lulus ? "is-1" : "is-0";
 
-            <li>
-                <span>Nilai tugas (${tugas} ≥ 60)</span>
-                <strong>${B ? "TERPENUHI" : "TIDAK TERPENUHI"}</strong>
-            </li>
+        return (
+          '<tr class="' + (record.id === flashId ? "is-new" : "") + '">' +
+          '<td class="num col-no">' + String(index + 1).padStart(2, "0") + "</td>" +
+          "<td><span class=\"rec-name\">" + escapeHTML(record.nama) + "</span>" +
+          '<span class="rec-time">' + escapeHTML(formatTime(record.at)) + "</span></td>" +
+          '<td class="num">' + record.ujian + "</td>" +
+          '<td class="num">' + record.tugas + "</td>" +
+          '<td class="num">' + record.kehadiran + "</td>" +
+          '<td class="num"><span class="lbit ' + bitClass + '">' + (record.lulus ? 1 : 0) + "</span></td>" +
+          "<td>" + status + "</td>" +
+          '<td class="col-actions">' +
+          '<button type="button" class="link" data-act="load" data-id="' + record.id + '">Muat</button>' +
+          '<button type="button" class="link link--danger" data-act="delete" data-id="' + record.id + '">Hapus</button>' +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
 
-            <li>
-                <span>Kehadiran (${kehadiran}% ≥ 75%)</span>
-                <strong>${C ? "TERPENUHI" : "TIDAK TERPENUHI"}</strong>
-            </li>
-        </ul>
+    flashId = null;
+  }
 
-        <p class="evaluation-title">
-            OPERASI BOOLEAN
-        </p>
+  /* ---------------- validasi ---------------- */
 
-        <div class="logic-result">
-            A = ${A}<br>
-            B = ${B}<br>
-            C = ${C}<br><br>
+  function setFieldError(field, message) {
+    const wrapper = document.querySelector('.field[data-field="' + field + '"]');
+    if (wrapper) wrapper.classList.add("is-invalid");
+    const paragraph = byId("err-" + field);
+    if (paragraph) {
+      paragraph.textContent = message;
+      paragraph.hidden = false;
+    }
+  }
 
-            L = A AND B AND C = ${lulus}<br>
-            T = NOT A OR NOT B OR NOT C = ${!A || !B || !C}<br>
-            NOT L = ${!lulus}
-        </div>
-    `;
-}
+  function clearFieldError(field) {
+    const wrapper = document.querySelector('.field[data-field="' + field + '"]');
+    if (wrapper) wrapper.classList.remove("is-invalid");
+    const paragraph = byId("err-" + field);
+    if (paragraph) {
+      paragraph.textContent = "";
+      paragraph.hidden = true;
+    }
+  }
 
-// PROSES FORMULIR KELULUSAN
-graduationForm.addEventListener("submit", function (event) {
+  function clearAllErrors() {
+    ["nama"].concat(FIELDS).forEach(clearFieldError);
+  }
+
+  function validate() {
+    const invalid = [];
+
+    if (!nameInput.value.trim()) {
+      setFieldError("nama", "Nama mahasiswa wajib diisi.");
+      invalid.push(nameInput);
+    } else {
+      clearFieldError("nama");
+    }
+
+    FIELDS.forEach((field) => {
+      const input = byId(field);
+      const raw = input.value.trim();
+      const numeric = Number(raw);
+
+      if (raw === "") {
+        setFieldError(field, "Nilai wajib diisi.");
+        invalid.push(input);
+      } else if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
+        setFieldError(field, "Nilai harus berada pada rentang 0–100.");
+        invalid.push(input);
+      } else {
+        clearFieldError(field);
+      }
+    });
+
+    return invalid;
+  }
+
+  /* ---------------- aksi data ---------------- */
+
+  function saveRecord(event) {
     event.preventDefault();
 
-    const nama = document.getElementById("nama").value.trim();
-    const ujian = Number(document.getElementById("ujian").value);
-    const tugas = Number(document.getElementById("tugas").value);
-    const kehadiran = Number(document.getElementById("kehadiran").value);
-
-    const inputKosong = nama === "";
-
-    const nilaiTidakValid =
-        !Number.isFinite(ujian) ||
-        !Number.isFinite(tugas) ||
-        !Number.isFinite(kehadiran) ||
-        ujian < 0 || ujian > 100 ||
-        tugas < 0 || tugas > 100 ||
-        kehadiran < 0 || kehadiran > 100;
-
-    if (inputKosong || nilaiTidakValid) {
-        result.className = "result-placeholder";
-
-        result.innerHTML = `
-            <p>INPUT TIDAK VALID</p>
-            <span>
-                Pastikan nama terisi dan semua nilai berada
-                pada rentang 0 sampai 100.
-            </span>
-        `;
-
-        return;
+    const invalid = validate();
+    if (invalid.length) {
+      invalid[0].focus();
+      return;
     }
 
-    // VARIABEL BOOLEAN UNTUK SETIAP KRITERIA
-    const A = ujian >= 60;
-    const B = tugas >= 60;
-    const C = kehadiran >= 75;
-
-    // OPERASI AND DAN OR
-    const lulus = A && B && C;
-    const tidakLulus = !A || !B || !C;
-
-    // OPERASI NOT / NEGASI
-    const hasilNegasi = !lulus;
-
-    // MEMBUAT OBJEK MAHASISWA BARU
-    const mahasiswaBaru = {
-        nama: nama,
-        ujian: ujian,
-        tugas: tugas,
-        kehadiran: kehadiran,
-
-        A: A,
-        B: B,
-        C: C,
-
-        lulus: lulus,
-        tidakLulus: tidakLulus,
-        hasilNegasi: hasilNegasi,
-
-        status: lulus ? "LULUS" : "TIDAK LULUS"
+    const input = readInputs();
+    const result = evaluate(input.values);
+    const record = {
+      id: createId(),
+      nama: input.name,
+      ujian: input.values.ujian,
+      tugas: input.values.tugas,
+      kehadiran: input.values.kehadiran,
+      lulus: result.lulus,
+      at: Date.now()
     };
 
-    // MENAMPILKAN HASIL
-    tampilkanHasil(mahasiswaBaru);
+    records.unshift(record);
+    flashId = record.id;
+    persist();
+    renderArchive();
+    setArchiveStatus("Tersimpan");
 
-    // MENYIMPAN DATA
-    dataMahasiswa.push(mahasiswaBaru);
+    nameInput.value = "";
+    renderEvaluation();
+    nameInput.focus();
+  }
 
-    simpanData();
-    tampilkanData();
+  function loadRecord(id) {
+    const record = records.find((item) => item.id === id);
+    if (!record) return;
 
-    // MENGOSONGKAN FORMULIR
-    graduationForm.reset();
-});
+    nameInput.value = record.nama;
+    FIELDS.forEach((field) => {
+      byId(field).value = record[field];
+      byId(field + "Range").value = record[field];
+      clearFieldError(field);
+    });
+    clearFieldError("nama");
+    renderEvaluation();
 
-// MENGHAPUS SATU DATA MAHASISWA
-function hapusMahasiswa(index) {
-    const mahasiswa = dataMahasiswa[index];
-
-    if (!mahasiswa) return;
-
-    const konfirmasi = confirm(
-        `Apakah kamu yakin ingin menghapus data ${mahasiswa.nama}?`
-    );
-
-    if (!konfirmasi) return;
-
-    dataMahasiswa.splice(index, 1);
-
-    simpanData();
-    tampilkanData();
-}
-
-// EVENT DELEGATION UNTUK TOMBOL HAPUS
-studentList.addEventListener("click", function (event) {
-    const tombolHapus = event.target.closest(".delete-btn");
-
-    if (tombolHapus) {
-        const index = Number(tombolHapus.dataset.index);
-
-        hapusMahasiswa(index);
+    document.querySelector(".panel--input").scrollIntoView({ behavior: "smooth", block: "center" });
+    try {
+      nameInput.focus({ preventScroll: true });
+    } catch (error) {
+      nameInput.focus();
     }
-});
+  }
 
-// MENGHAPUS SELURUH DATA MAHASISWA
-document.getElementById("clearAllBtn").addEventListener("click", function () {
-    if (dataMahasiswa.length === 0) {
-        alert("Belum ada data mahasiswa untuk dihapus.");
-        return;
+  function removeRecord(id) {
+    records = records.filter((record) => record.id !== id);
+    persist();
+    renderArchive();
+    setArchiveStatus("Data dihapus");
+  }
+
+  /* ---------------- event ---------------- */
+
+  form.addEventListener("submit", saveRecord);
+
+  form.addEventListener("reset", () => {
+    clearAllErrors();
+    window.setTimeout(renderEvaluation, 0);
+  });
+
+  form.addEventListener("input", (event) => {
+    const field = event.target.id;
+    if (field === "nama" || FIELDS.indexOf(field) !== -1) {
+      clearFieldError(field);
+      renderEvaluation();
+    }
+  });
+
+  FIELDS.forEach((field) => {
+    const range = byId(field + "Range");
+    const number = byId(field);
+
+    range.addEventListener("input", () => {
+      number.value = range.value;
+      clearFieldError(field);
+      renderEvaluation();
+    });
+
+    number.addEventListener("input", () => {
+      if (number.value !== "") {
+        let numeric = Number(number.value);
+        if (Number.isFinite(numeric)) {
+          if (numeric > 100) {
+            numeric = 100;
+            number.value = "100";
+          } else if (numeric < 0) {
+            numeric = 0;
+            number.value = "0";
+          }
+          range.value = String(Math.max(0, Math.min(100, Math.round(numeric))));
+        }
+      }
+      clearFieldError(field);
+    });
+  });
+
+  recordsBody.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-act]");
+    if (!button) return;
+
+    const id = button.dataset.id;
+
+    if (button.dataset.act === "load") {
+      loadRecord(id);
+      return;
     }
 
-    const konfirmasi = confirm(
-        "Hapus seluruh data mahasiswa yang tersimpan?"
+    if (button.dataset.armed === "1") {
+      removeRecord(id);
+      return;
+    }
+
+    button.dataset.armed = "1";
+    button.textContent = "Yakin?";
+    button.classList.add("is-armed");
+    button.dataset.timer = String(
+      window.setTimeout(() => {
+        if (!button.isConnected) return;
+        button.dataset.armed = "";
+        button.textContent = "Hapus";
+        button.classList.remove("is-armed");
+      }, 2800)
     );
+  });
 
-    if (!konfirmasi) return;
+  clearAllBtn.addEventListener("click", () => {
+    if (records.length === 0) return;
 
-    dataMahasiswa = [];
+    if (clearAllBtn.dataset.armed !== "1") {
+      clearAllBtn.dataset.armed = "1";
+      clearAllBtn.textContent = "Klik lagi";
+      clearAllBtn.classList.add("is-armed");
+      clearAllBtn.dataset.timer = String(window.setTimeout(resetClearAll, 3200));
+      return;
+    }
 
-    simpanData();
-    tampilkanData();
+    records = [];
+    persist();
+    renderArchive();
+    setArchiveStatus("Arsip dikosongkan");
+  });
 
-    result.className = "result-placeholder";
+  /* ---------------- mulai ---------------- */
 
-    result.innerHTML = `
-        <p>Data berhasil dikosongkan.</p>
-        <span>
-            Belum ada data mahasiswa yang diperiksa.
-        </span>
-    `;
-});
+  renderEvaluation();
+  renderArchive();
+  if (!storageOK) showStorageWarning();
+})();
 
-// MENAMPILKAN DATA TERSIMPAN SAAT HALAMAN DIBUKA
-tampilkanData();
+

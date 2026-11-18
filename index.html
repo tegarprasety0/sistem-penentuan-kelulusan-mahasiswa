@@ -1,149 +1,155 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistem penentuan kelulusan mahasiswa menggunakan Aljabar Boolean.">
-    <title>Sistem Kelulusan Mahasiswa | Aljabar Boolean</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Kelulusan Mahasiswa — Aljabar Boolean</title>
+<link rel="stylesheet" href="style.css">
+<script src="script.js" defer></script>
 </head>
 <body>
-    <header class="site-header">
-        <div class="header-inner">
-            <p class="brand">ALJABAR BOOLEAN</p>
-            <p class="header-label">KELOMPOK 4</p>
+<div class="sheet">
+
+  <header class="masthead">
+
+    <h1>Sistem Penentuan Kelulusan Mahasiswa</h1>
+    <p class="lede">Menentukan status lulus atau tidak lulus dari nilai ujian, tugas, dan kehadiran menggunakan operasi <b>AND</b>, <b>OR</b>, dan <b>NOT</b>.</p>
+
+    <div class="formula">
+      <span class="formula__label">Rumus</span>
+      <span class="formula__expr">L = (A &and; B &and; C) &or; (D &and; E &and; F)</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+
+      <section class="panel panel--input" aria-labelledby="inputTitle">
+        <div class="section-head">
+          <h2 id="inputTitle">Input Data</h2>
         </div>
-    </header>
 
-    <main>
-        <section class="hero">
-            <h1>Sistem Penentuan<br>Kelulusan Mahasiswa</h1>
-            <p class="hero-description">
-                Sistem sederhana untuk menentukan kelulusan mahasiswa berdasarkan
-                nilai ujian, tugas, dan kehadiran menggunakan operasi logika Boolean.
-            </p>
-        </section>
-
-        <section class="content" aria-label="Formulir dan hasil kelulusan">
-            <section class="form-section">
-                <div class="section-heading">
-                    <h2>Periksa Kelulusan</h2>
-                </div>
-
-                <form id="graduationForm">
-                    <div class="form-group">
-                        <label for="nama">Nama Mahasiswa</label>
-                        <input type="text" id="nama" name="nama" placeholder="Masukkan nama mahasiswa" required maxlength="100">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="ujian">Nilai Ujian</label>
-                        <input type="number" id="ujian" name="ujian" placeholder="0–100" min="0" max="100" step="any" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tugas">Nilai Tugas</label>
-                        <input type="number" id="tugas" name="tugas" placeholder="0–100" min="0" max="100" step="any" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="kehadiran">Persentase Kehadiran</label>
-                        <input type="number" id="kehadiran" name="kehadiran" placeholder="0–100" min="0" max="100" step="any" required>
-                    </div>
-
-                    <button type="submit" class="submit-btn">PROSES KELULUSAN</button>
-                </form>
-            </section>
-
-            <section class="result-section" aria-live="polite">
-                <div class="section-heading">
-                    <h2>Hasil Kelulusan</h2>
-                </div>
-                <div id="result" class="result-placeholder">
-                    <p>Belum ada data yang diperiksa.</p>
-                    <span>Isi formulir untuk melihat hasil kelulusan.</span>
-                </div>
-            </section>
-        </section>
-
-        <section class="student-section">
-            <div class="student-header">
-                <div>
-                    <h2>Data Mahasiswa</h2>
-                    <p>Data yang telah diperiksa tersimpan di penyimpanan lokal browser ini.</p>
-                </div>
-                <button type="button" id="clearAllBtn" class="clear-btn">HAPUS SEMUA DATA</button>
+        <form id="form" novalidate>
+          <div class="field" data-field="nama">
+            <div class="field__top">
+              <label for="nama">Nama Mahasiswa</label>
             </div>
+            <input class="input-text" type="text" id="nama" name="nama" maxlength="48"
+                   placeholder="cth. Brown Bear" autocomplete="off" spellcheck="false">
+            <p class="field__err" id="err-nama" hidden></p>
+          </div>
 
-            <div class="statistics">
-                <div class="stat-item">
-                    <p>TOTAL MAHASISWA</p>
-                    <h3 id="totalMahasiswa">0</h3>
-                </div>
-                <div class="stat-item">
-                    <p>JUMLAH LULUS</p>
-                    <h3 id="jumlahLulus">0</h3>
-                </div>
-                <div class="stat-item">
-                    <p>JUMLAH TIDAK LULUS</p>
-                    <h3 id="jumlahTidakLulus">0</h3>
-                </div>
+          <div class="field" data-field="ujian">
+            <div class="field__top">
+              <label for="ujian">Nilai Ujian</label>
+              <span class="field__atoms">A &middot; D</span>
             </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>NO.</th>
-                            <th>NAMA</th>
-                            <th>UJIAN</th>
-                            <th>TUGAS</th>
-                            <th>KEHADIRAN</th>
-                            <th>STATUS</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentList">
-                        <tr><td colspan="7" class="empty-row">Belum ada data mahasiswa.</td></tr>
-                    </tbody>
-                </table>
+            <div class="control">
+              <input type="range" id="ujianRange" min="0" max="100" step="1" value="76" aria-label="Nilai ujian (slider)">
+              <input type="number" id="ujian" name="ujian" min="0" max="100" step="1" value="76" inputmode="numeric" autocomplete="off">
             </div>
-        </section>
+            <p class="field__err" id="err-ujian" hidden></p>
+          </div>
 
-        <section class="boolean-section">
-            <h2>Aturan Aljabar Boolean</h2>
-            <p class="boolean-intro">Kelulusan ditentukan dengan tiga kondisi. Semua kondisi harus bernilai benar agar mahasiswa dinyatakan lulus.</p>
-
-            <div class="rules-grid">
-                <article class="rule-card">
-                    <span class="rule-symbol">A</span>
-                    <h3>Nilai Ujian</h3>
-                    <p>Nilai ujian ≥ 60</p>
-                </article>
-                <article class="rule-card">
-                    <span class="rule-symbol">B</span>
-                    <h3>Nilai Tugas</h3>
-                    <p>Nilai tugas ≥ 60</p>
-                </article>
-                <article class="rule-card">
-                    <span class="rule-symbol">C</span>
-                    <h3>Kehadiran</h3>
-                    <p>Kehadiran ≥ 75%</p>
-                </article>
+          <div class="field" data-field="tugas">
+            <div class="field__top">
+              <label for="tugas">Nilai Tugas</label>
+              <span class="field__atoms">B &middot; E</span>
             </div>
-
-            <div class="logic-formulas">
-                <p><strong>Persamaan kelulusan:</strong> L = A AND B AND C</p>
-                <p><strong>Persamaan tidak lulus:</strong> T = NOT A OR NOT B OR NOT C</p>
-                <p><strong>Operator negasi:</strong> NOT L = !L</p>
+            <div class="control">
+              <input type="range" id="tugasRange" min="0" max="100" step="1" value="70" aria-label="Nilai tugas (slider)">
+              <input type="number" id="tugas" name="tugas" min="0" max="100" step="1" value="70" inputmode="numeric" autocomplete="off">
             </div>
-        </section>
-    </main>
+            <p class="field__err" id="err-tugas" hidden></p>
+          </div>
 
-    <footer>
-        <p>SISTEM PENENTUAN KELULUSAN MAHASISWA</p>
-        <p>Implementasi Aljabar Boolean menggunakan HTML, CSS, dan JavaScript.</p>
-    </footer>
+          <div class="field" data-field="kehadiran">
+            <div class="field__top">
+              <label for="kehadiran">Kehadiran (%)</label>
+              <span class="field__atoms">C &middot; F</span>
+            </div>
+            <div class="control">
+              <input type="range" id="kehadiranRange" min="0" max="100" step="1" value="78" aria-label="Persentase kehadiran (slider)">
+              <input type="number" id="kehadiran" name="kehadiran" min="0" max="100" step="1" value="78" inputmode="numeric" autocomplete="off">
+            </div>
+            <p class="field__err" id="err-kehadiran" hidden></p>
+          </div>
+
+          <div class="actions">
+            <button class="btn" type="submit">Simpan Data</button>
+            <button class="btn btn--ghost" type="reset">Reset</button>
+          </div>
+          <p class="form__note">Evaluasi berjalan langsung. Data tersimpan di peramban ini.</p>
+        </form>
+      </section>
+      <section class="panel panel--report" aria-labelledby="reportTitle">
+        <div class="section-head">
+          <h2 id="reportTitle">Evaluasi Boolean</h2>
+        </div>
+
+        <div class="verdict" id="verdict" data-state="idle">
+          <div class="verdict__label">Status Kelulusan</div>
+          <div class="verdict__value" id="verdictValue">&mdash;</div>
+          <p class="verdict__note" id="verdictNote">Lengkapi ketiga nilai (0&ndash;100) untuk mengevaluasi.</p>
+        </div>
+
+        <table class="atoms">
+          <caption class="sr-only">Nilai kebenaran setiap atom</caption>
+          <thead>
+            <tr>
+              <th>Atom</th>
+              <th>Pernyataan</th>
+              <th class="num">Nilai</th>
+              <th class="num">Bit</th>
+            </tr>
+          </thead>
+          <tbody id="atomBody"></tbody>
+        </table>
+
+        <div class="pathways">
+          <div class="paths" id="paths"></div>
+          <div class="path-final" id="pathFinal"></div>
+        </div>
+      </section>
+
+    </div>
+    <section class="panel panel--archive" id="recordsPanel" aria-labelledby="archiveTitle">
+      <div class="section-head section-head--archive">
+        <h2 id="archiveTitle">Arsip Mahasiswa</h2>
+        <span class="archive-status" id="archiveStatus" role="status"></span>
+        <span class="archive-count" id="archiveCount">0 data</span>
+        <button class="clear-btn" id="clearAll" type="button" disabled>Hapus semua</button>
+      </div>
+
+      <p class="scroll-hint" id="scrollHint" hidden>Geser tabel untuk melihat kolom lain</p>
+
+      <div class="empty" id="archiveEmpty">
+        <div class="empty__glyph">&empty;</div>
+        <p class="empty__text">Belum ada data tersimpan</p>
+      </div>
+
+      <div class="table-wrap" id="archiveTable" hidden>
+        <table class="records">
+          <thead>
+            <tr>
+              <th class="col-no">No</th>
+              <th>Nama</th>
+              <th class="num">Ujian</th>
+              <th class="num">Tugas</th>
+              <th class="num">Hadir</th>
+              <th class="num">L</th>
+              <th>Status</th>
+              <th class="col-actions">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+</div>
 </body>
 </html>
