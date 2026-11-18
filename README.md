@@ -5,7 +5,7 @@ Project ini adalah aplikasi web sederhana untuk menentukan kelulusan mahasiswa b
 
 ## 🌐 Demo
 Kamu bisa mencoba aplikasi ini secara langsung melalui tautan berikut:
-👉 **[https://spklm.vercel.app/](https://spklm.vercel.app/)**
+👉 **[https://spklm-kelompok4.vercel.app/](https://spklm-kelompok4.vercel.app/)**
 
 ## 👥 Tim Pengembang
 **Dibuat oleh Kelompok 4:**
